@@ -135,7 +135,9 @@ class MainWindow(QMainWindow):
             text = "\n".join(message)
 
         elif option == 'Codes':
-            self.widget.setLayout(self.layout2)
+            asins = info.split()
+            message = ffautomation.codes(asins)
+            text = "\n".join(message)
 
         dlg = CustomDialog(parent=self, text=text)
         dlg.exec()

@@ -343,6 +343,7 @@ def codes(list_from_program):
         match_finder(title, item_desc, matches)
 
         sel = main.OptionSelection(labels=matches, desc=item_desc)
+        sel.exec()
         cells_values.append(sel.get_selection)
 
     driver.quit()
