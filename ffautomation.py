@@ -206,7 +206,7 @@ def pre_manifest(list_from_program, time_to_sleep):
         elif matches > 1:
             state.append(f'{place}.- {outbound} - Repeated')
 
-        elif results and matches == 0:
+        elif results and not matches:
             state.append(f'{place}.- {outbound} - HOLD')
 
         else:
@@ -214,12 +214,12 @@ def pre_manifest(list_from_program, time_to_sleep):
                 if find_match(driver, row, outbound) is True:
                     active_button = detect_state(driver, row)
 
-                    if active_button in ['Problems for Forwarder', 'Problems for Client']:
+                    if active_button not in ['Unreceived', 'Received']:
                         state.append(f'{place}.- {outbound} - {active_button}')
                     else:
                         state.append(f'{place}.- {outbound} - Pre-manifested')
-                        place_as('Pre-Manifest', driver, row)
 
+                    place_as('Pre-Manifest', driver, row)
                     accept_alert(driver)
 
                     row += 1
