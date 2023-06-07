@@ -112,6 +112,13 @@ class MainWindow(QMainWindow):
 
         if option == 'Receiving':
             packages = info.split()
+
+            cheking = packages[1::2]
+            if not all(map(lambda a: True if a[0:2] == 'NS' else False, cheking)):
+                alert = CustomDialog(parent=self, text='Incorrect information provided')
+                alert.exec()
+                return
+
             packages_nship = [[A, B] for A, B in zip(packages[0::2], packages[1::2])]
             repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time)
             dictionary = {"Repeated": repeated, "Holds": holds, "Problems": problems, "Not found": not_found}
