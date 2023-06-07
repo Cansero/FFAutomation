@@ -158,6 +158,7 @@ def receiving(list_from_program, time_to_sleep):
                 hold = is_hold(driver, row)
 
                 place_as('Received', driver, row)
+                accept_alert(driver)
                 place_nship(driver, row, nship)
 
                 if hold:
@@ -167,6 +168,7 @@ def receiving(list_from_program, time_to_sleep):
                 if state in ['Problems for Forwarder', 'Problems for Client']:
                     place_as(state, driver, row)
 
+                accept_alert(driver)
                 times_appear += 1
                 row += 1
 
