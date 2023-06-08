@@ -10,6 +10,40 @@ from PySide6.QtWidgets import (
 )
 
 
+class InputWin(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(QSize(450, 150))
+        self.setWindowTitle("Attention")
+
+        self.userinput = ''
+
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accepted_win)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout = QVBoxLayout()
+        self.message = QLabel('Add references:')
+        self.input_text = QTextEdit()
+        self.input_text.setAcceptRichText(False)
+
+        self.layout.addWidget(self.message)
+        self.layout.addWidget(self.input_text)
+        self.layout.addWidget(self.buttonBox)
+
+        self.setLayout(self.layout)
+
+    def accepted_win(self):
+        self.userinput = self.input_text.toPlainText()
+        self.accept()
+
+    @property
+    def user_input(self):
+        return self.userinput
+
+
 class OptionSelection(QDialog):
     def __init__(self, labels=None, desc=None):
         super().__init__()
@@ -88,7 +122,7 @@ class MainWindow(QMainWindow):
 
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
-        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Codes'])
+        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Codes', 'Test'])
         self.items = QTextEdit()
         self.items.setAcceptRichText(False)
         self.ok_button = QPushButton('OK')
@@ -145,6 +179,13 @@ class MainWindow(QMainWindow):
             asins = info.split()
             message = ffautomation.codes(asins)
             text = "\n".join(message)
+
+        elif option == 'Test':
+            a = InputWin(parent=self)
+            if a.exec():
+                print('jala')
+            else:
+                return
 
         dlg = CustomDialog(parent=self, text=text)
         dlg.exec()

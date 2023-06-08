@@ -1,4 +1,5 @@
 from time import sleep
+from datetime import datetime
 
 import gspread
 import pyautogui
@@ -18,6 +19,8 @@ gc = gspread.oauth(
     credentials_filename='credentials.json',
     authorized_user_filename='authorized_user.json'
 )
+
+today = datetime.today().strftime('%m/%d/%y')
 
 
 def log_in(driver):
@@ -41,6 +44,19 @@ def search_tracking(driver, tracking):
             trkng_box.clear()
             trkng_box.send_keys(tracking)
             trkng_box.send_keys(Keys.RETURN)
+            return
+        except NoSuchElementException:
+            sleep(2)
+            driver.refresh()
+
+
+def search_by_ref(driver, reference):
+    while True:
+        try:
+            reference_box = driver.find_element(by=By.NAME, value='search_unique_code')
+            reference_box.clear()
+            reference_box.send_keys(reference)
+            reference_box.send_keys(Keys.RETURN)
             return
         except NoSuchElementException:
             sleep(2)
@@ -130,6 +146,10 @@ def match_finder(search, list_to_match, container):
         if result in list_to_match and result not in container:
             container.append(result)
         n += 1
+
+
+def find_tracking(driver, place):
+    return driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]/span[2]").text
 
 
 def receiving(list_from_program, time_to_sleep):
@@ -350,3 +370,32 @@ def codes(list_from_program):
 
     driver.quit()
     return cells_values
+
+def problems(list_from_program, references):
+
+    driver = webdriver.Chrome(chrome_options=options)
+    driver.get(references.url)
+
+    log_in(driver)
+
+    messages = []
+    for tracking, reference in zip(list_from_program, references):
+        row = 1
+        search_by_ref(driver, reference)
+
+        results = len(driver.find_elements(by=By.XPATH, value="//tbody/tr"))
+
+        if not results:
+            messages.append('Not found')
+
+        else:
+            while row <= results:
+                trkng = find_tracking(driver, row)
+
+                if trkng in ['none', 'link to amazon ']:
+                    pass
+
+                else:
+                    pass
+
+                # Ahorita no traigo chompa pa esto unu
