@@ -78,7 +78,7 @@ class OptionSelection(QDialog):
         self.setLayout(layout)
 
     def select_option(self):
-        self.selection = self.sender().text()
+        self.selection = self.sender().text
         self.accept()
 
     def try_match(self):
@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
         elif option == 'Test':
             a = InputWin(parent=self)
             if a.exec():
-                print('jala')
+                ffautomation.problemas(info.split(), a.user_input.split())
             else:
                 return
 

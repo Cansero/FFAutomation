@@ -148,8 +148,18 @@ def match_finder(search, list_to_match, container):
         n += 1
 
 
-def find_tracking(driver, place):
-    return driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]/span[2]").text
+def detect_tracking(driver, place):
+    none = find_match(driver, place, 'none')
+    link = find_match(driver, place, 'link to amazon')
+    if none:
+        return 'none'
+    elif link:
+        return 'link to amazon '
+
+    else:
+        try:
+            result = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]/span/*[contains(text(),'{}')]")
+
 
 
 def receiving(list_from_program, time_to_sleep):
@@ -371,7 +381,8 @@ def codes(list_from_program):
     driver.quit()
     return cells_values
 
-def problems(list_from_program, references):
+
+def problemas(list_from_program, referencias):
 
     driver = webdriver.Chrome(chrome_options=options)
     driver.get(references.url)
@@ -379,7 +390,7 @@ def problems(list_from_program, references):
     log_in(driver)
 
     messages = []
-    for tracking, reference in zip(list_from_program, references):
+    for tracking, reference in zip(list_from_program, referencias):
         row = 1
         search_by_ref(driver, reference)
 
@@ -388,14 +399,19 @@ def problems(list_from_program, references):
         if not results:
             messages.append('Not found')
 
+        if results > 1:
+            messages.append('Not solvable')
+
         else:
             while row <= results:
-                trkng = find_tracking(driver, row)
+                is_none = find_match(driver, row, 'none')
+                is_trackingtoamazon = find_match(driver, row, 'link to amazon')
 
                 if trkng in ['none', 'link to amazon ']:
-                    pass
+                    print('si es')
 
                 else:
                     pass
 
-                # Ahorita no traigo chompa pa esto unu
+                print(trkng)
+                row += 1
