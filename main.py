@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
 
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
-        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Codes', 'Test'])
+        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Codes', 'Problems'])
         self.items = QTextEdit()
         self.items.setAcceptRichText(False)
         self.ok_button = QPushButton('OK')
@@ -180,10 +180,11 @@ class MainWindow(QMainWindow):
             message = ffautomation.codes(asins)
             text = "\n".join(message)
 
-        elif option == 'Test':
+        elif option == 'Problems':
             a = InputWin(parent=self)
             if a.exec():
-                ffautomation.problemas(info.split(), a.user_input.split())
+                message = ffautomation.problemas(info.split(), a.user_input.split())
+                text = "\n".join(message)
             else:
                 return
 
