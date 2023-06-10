@@ -21,6 +21,7 @@ gc = gspread.oauth(
 )
 
 today = datetime.today().strftime('%m/%d/%y')
+month = datetime.today().strftime('%Y-%m')
 
 
 def log_in(driver):
@@ -149,17 +150,46 @@ def match_finder(search, list_to_match, container):
 
 
 def detect_tracking(driver, place):
-    none = find_match(driver, place, 'none')
-    link = find_match(driver, place, 'link to amazon')
-    if none:
+    if find_match(driver, place, 'none'):
         return 'none'
-    elif link:
+    elif find_match(driver, place, 'link to amazon'):
         return 'link to amazon '
 
     else:
         try:
-            result = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]/span/*[contains(text(),'{}')]")
+            result = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]//span//child::button".format(place))\
+                .get_attribute('data-clipboard-text')
+            return result
+        except NoSuchElementException:
+            return 'No se pudo'
 
+
+def write_comment(driver, place, date, method=None, inbound=None, previous_track=None):
+    if method == '1':  # When inbound is None or Link to Amazon
+        mensaje = f'CM - We received inbound {inbound} - IM {date}'
+
+    elif method == '2':  # When inbound different to the one we received
+        mensaje = f'CM - We received inbound {inbound} Please update - IM {date}\n\n{previous_track} not received'
+
+    elif method == '3':  # When received two different inbounds
+        mensaje = f'CM - We received additional inbound. Please add entry - IM {date}\n\n{inbound}'
+
+    actual_comment = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place)).text
+    driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place)).click()
+    if actual_comment == '<click>':
+        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place)) \
+            .send_keys(mensaje)
+    elif actual_comment != '<click>' and method == '3':
+        mensaje = f'\n{inbound}'
+        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place)) \
+            .send_keys(mensaje)
+    elif actual_comment != '<click>' and method != '3':
+        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place)) \
+            .clear()
+
+    driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
+
+    # WIP
 
 
 def receiving(list_from_program, time_to_sleep):
@@ -384,6 +414,8 @@ def codes(list_from_program):
 
 def problemas(list_from_program, referencias):
 
+    received_packages = gc.open("BUFFALO WAREHOUSE").worksheet(f'{month}').col_values(2)
+
     driver = webdriver.Chrome(chrome_options=options)
     driver.get(references.url)
 
@@ -404,14 +436,20 @@ def problemas(list_from_program, referencias):
 
         else:
             while row <= results:
-                is_none = find_match(driver, row, 'none')
-                is_trackingtoamazon = find_match(driver, row, 'link to amazon')
+                trkng = detect_tracking(driver, row)
 
                 if trkng in ['none', 'link to amazon ']:
-                    print('si es')
+                    write_comment(driver, row, today, method='1', inbound=tracking)
 
                 else:
-                    pass
+                    if trkng not in received_packages:
+                        write_comment(driver, row, today, method='2', inbound=tracking, previous_track=trkng)
+
+                    else:
+                        write_comment(driver, row, today, method='3', inbound=tracking)
+
+                place_as('Problem for Client', driver, row)
+                messages.append('Problem for Client')
 
                 print(trkng)
                 row += 1
