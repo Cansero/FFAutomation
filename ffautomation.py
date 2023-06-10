@@ -450,8 +450,8 @@ def problemas(list_from_program, referencias):
                     method_no = '3'
 
             write_comment(driver, row, today, method=method_no, inbound=tracking, previous_track=trkng)
-            place_as('Problem for Client', driver, row)
-            messages.append('Problems for Client')
+            place_as('Problems for Client', driver, row)
+            messages.append('Problem for Client')
 
     driver.quit()
     return messages
