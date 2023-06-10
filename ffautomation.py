@@ -1,6 +1,7 @@
 from time import sleep
 from datetime import datetime
 
+import re
 import gspread
 import pyautogui
 from selenium import webdriver
@@ -165,6 +166,7 @@ def detect_tracking(driver, place):
 
 
 def write_comment(driver, place, date, method=None, inbound=None, previous_track=None):
+    mensaje = ''
     if method == '1':  # When inbound is None or Link to Amazon
         mensaje = f'CM - We received inbound {inbound} - IM {date}'
 
@@ -174,22 +176,22 @@ def write_comment(driver, place, date, method=None, inbound=None, previous_track
     elif method == '3':  # When received two different inbounds
         mensaje = f'CM - We received additional inbound. Please add entry - IM {date}\n\n{inbound}'
 
-    actual_comment = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place)).text
-    driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place)).click()
+    note = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place))
+    actual_comment = note.text
+    note.click()
+    text_box = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place))
+
     if actual_comment == '<click>':
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place)) \
-            .send_keys(mensaje)
-    elif actual_comment != '<click>' and method == '3':
-        mensaje = f'\n{inbound}'
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place)) \
-            .send_keys(mensaje)
-    elif actual_comment != '<click>' and method != '3':
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place)) \
-            .clear()
+        pass
 
+    elif actual_comment != '<click>':
+        if re.search('\d{6}$', actual_comment):
+            mensaje = f'\n{inbound}'
+        else:
+            mensaje = f'\n\n{mensaje}'
+
+    text_box.send_keys(mensaje)
     driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
-
-    # WIP
 
 
 def receiving(list_from_program, time_to_sleep):
@@ -421,9 +423,9 @@ def problemas(list_from_program, referencias):
 
     log_in(driver)
 
+    row = 1
     messages = []
     for tracking, reference in zip(list_from_program, referencias):
-        row = 1
         search_by_ref(driver, reference)
 
         results = len(driver.find_elements(by=By.XPATH, value="//tbody/tr"))
@@ -435,21 +437,18 @@ def problemas(list_from_program, referencias):
             messages.append('Not solvable')
 
         else:
-            while row <= results:
-                trkng = detect_tracking(driver, row)
+            trkng = detect_tracking(driver, row)
 
-                if trkng in ['none', 'link to amazon ']:
-                    write_comment(driver, row, today, method='1', inbound=tracking)
+            if trkng in ['none', 'link to amazon ']:
+                method_no = '1'
+
+            else:
+                if trkng not in received_packages:
+                    method_no = '2'
 
                 else:
-                    if trkng not in received_packages:
-                        write_comment(driver, row, today, method='2', inbound=tracking, previous_track=trkng)
+                    method_no = '3'
 
-                    else:
-                        write_comment(driver, row, today, method='3', inbound=tracking)
-
-                place_as('Problem for Client', driver, row)
-                messages.append('Problem for Client')
-
-                print(trkng)
-                row += 1
+            write_comment(driver, row, today, method=method_no, inbound=tracking, previous_track=trkng)
+            place_as('Problem for Client', driver, row)
+            messages.append('Problem for Client')
