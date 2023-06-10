@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
             packages = info.split()
 
             cheking = packages[1::2]
-            if not all(map(lambda a: True if a[0:2] == 'NS' else False, cheking)):
+            if not all(map(lambda a: True if a[0:2] == 'NS' or a[0:2] == 'N/' else False, cheking)):
                 alert = CustomDialog(parent=self, text='Incorrect information provided')
                 alert.exec()
                 return
