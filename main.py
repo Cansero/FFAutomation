@@ -78,7 +78,7 @@ class OptionSelection(QDialog):
         self.setLayout(layout)
 
     def select_option(self):
-        self.selection = self.sender().text
+        self.selection = self.sender().text()
         self.accept()
 
     def try_match(self):

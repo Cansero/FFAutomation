@@ -416,7 +416,7 @@ def codes(list_from_program):
 
 def problemas(list_from_program, referencias):
 
-    received_packages = gc.open("BUFFALO WAREHOUSE").worksheet(f'{month}').col_values(2)
+    buffalo = gc.open("BUFFALO WAREHOUSE").worksheet(f'{month}')
 
     driver = webdriver.Chrome(chrome_options=options)
     driver.get(references.url)
@@ -443,7 +443,7 @@ def problemas(list_from_program, referencias):
                 method_no = '1'
 
             else:
-                if trkng not in received_packages:
+                if not buffalo.find(trkng):
                     method_no = '2'
 
                 else:
