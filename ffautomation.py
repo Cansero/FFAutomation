@@ -117,6 +117,7 @@ def find_match(driver, place, tracking):
 
 
 def accept_alert(driver):
+    sleep(0.3)
     try:
         alert = driver.switch_to.alert
         alert.accept()
