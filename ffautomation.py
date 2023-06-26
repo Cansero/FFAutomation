@@ -213,6 +213,9 @@ def receiving(list_from_program, time_to_sleep):
         if results == 0:
             not_found.append(tracking)
 
+        premanifests = driver.find_element(by=By.CLASS_NAME, value='shipment-size-readout').text.split()[0]
+        alert = True if premanifests == '50' else False
+
         row = 1
         times_appear = 0
         while row <= results:
@@ -221,7 +224,8 @@ def receiving(list_from_program, time_to_sleep):
                 hold = is_hold(driver, row)
 
                 place_as('Received', driver, row)
-                accept_alert(driver)
+                if alert:
+                    accept_alert(driver)
                 place_nship(driver, row, nship)
 
                 if hold:
@@ -230,8 +234,10 @@ def receiving(list_from_program, time_to_sleep):
 
                 if state in ['Problems for Forwarder', 'Problems for Client']:
                     place_as(state, driver, row)
+                    problems.append(tracking)
 
-                accept_alert(driver)
+                if alert:
+                    accept_alert(driver)
                 times_appear += 1
                 row += 1
 
