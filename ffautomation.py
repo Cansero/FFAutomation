@@ -195,6 +195,14 @@ def write_comment(driver, place, date, method=None, inbound=None, previous_track
     driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
 
 
+def is_alert(driver):
+    try:
+        premanifests = driver.find_element(by=By.CLASS_NAME, value='shipment-size-readout').text.split()[0]
+        return True if premanifests == '50' else False
+    except NoSuchElementException:
+        return False
+
+
 def receiving(list_from_program, time_to_sleep):
 
     driver = webdriver.Chrome(chrome_options=options)
@@ -213,8 +221,7 @@ def receiving(list_from_program, time_to_sleep):
         if results == 0:
             not_found.append(tracking)
 
-        premanifests = driver.find_element(by=By.CLASS_NAME, value='shipment-size-readout').text.split()[0]
-        alert = True if premanifests == '50' else False
+        alert = is_alert(driver)
 
         row = 1
         times_appear = 0
