@@ -200,7 +200,7 @@ def is_alert(driver):
         premanifests = driver.find_element(by=By.CLASS_NAME, value='shipment-size-readout').text.split()[0]
         return True if premanifests == '50' else False
     except NoSuchElementException:
-        return False
+        return True
 
 
 def receiving(list_from_program, time_to_sleep):
