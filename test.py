@@ -1,45 +1,63 @@
 import pandas as pd
 import gspread
-import numpy as np
 
 gc = gspread.oauth(
     credentials_filename='credentials.json',
     authorized_user_filename='authorized_user.json'
 )
 
-cm_package = gc.open('CM NSHIP PACKAGE INFORMATION 2023')
-main_file = pd.DataFrame(cm_package.worksheet('MAIN FILE').get_all_records())
-main_file_inbound = main_file['Inbound tracking'].to_list()
 
-unreceived = pd.read_csv('unreceived.csv')
+def new_packages():
+    cm_package = gc.open('CM NSHIP PACKAGE INFORMATION 2023')
+    main_file = pd.DataFrame(cm_package.worksheet('MAIN FILE').get_all_records())
+    main_file['Inbound tracking'] = main_file['Inbound tracking'].astype(str)
 
-unreceived['Inbound tracking'] = unreceived['Inbound tracking'].str[1:]
-unreceived['Outbound tracking'] = unreceived['Outbound tracking'].str[4:]
+    unreceived = pd.read_csv('CSV/unreceived.csv')
+    unreceived = unreceived.loc[:, 'Status':'Postal Code']
 
-mascara = unreceived['Inbound tracking'].isin(['link to amazon', 'Tracking Available Soon']) |\
-          pd.isna(unreceived['Inbound tracking'])
+    unreceived['Inbound tracking'] = unreceived['Inbound tracking'].str[1:]
+    unreceived['Outbound tracking'] = unreceived['Outbound tracking'].str[4:]
 
-link = unreceived.loc[~mascara]
+    mascara = unreceived['Inbound tracking'].isin(['link to amazon', 'Tracking Available Soon']) | \
+              pd.isna(unreceived['Inbound tracking'])
 
-link_inbound = link['Inbound tracking'].to_list()
+    link = unreceived.loc[~mascara]
 
-no_match = []
-match = []
-for i in main_file_inbound:
-    if type(i) is not str:
-        i = str(i)
-    for i2 in link_inbound:
-        if len(i) == len(i2):
-            turn = 0
-            different = False
-            while turn < len(i):
-                if i[turn] != i2[turn]:
-                    different = True
-                    break
-                else:
-                    turn += 1
-            if not different:
-                if i not in match:
-                    match.append(i)
+    mascara1 = link['Inbound tracking'].isin(main_file['Inbound tracking'])
 
-print('fin')
+    compare = link.loc[~mascara1]
+
+    print('fin')
+
+
+def asins():
+    master_file = gc.open('MASTER FILE NUEVO')
+    master_file = pd.DataFrame(master_file.worksheet('DATA').get_all_records())
+    master_file['ASIN\n0'] = master_file['ASIN\n0'].astype(str)
+
+    asins_manual = gc.open('UNRECEIVED CA')
+    asins_manual = pd.DataFrame(asins_manual.worksheet('UNRECEIVED CA').get_all_records())
+
+    unreceived = pd.read_csv('CSV/unreceived.csv')
+    unreceived = unreceived.loc[:, ['ASIN', 'Country']]
+    unreceived = unreceived.fillna(value={'Country': 'China'})
+    unreceived['Country'] = unreceived['Country'].apply(lambda x: x.upper())
+    unreceived['ASIN'] = unreceived['ASIN'].astype(str)
+
+    coo = pd.read_csv('CSV/UNRECEIVED CA - COO.csv')
+
+    mascara = unreceived['ASIN'].isin(master_file['ASIN\n0'])
+
+    unreceived = unreceived.loc[~mascara]
+
+
+    test = pd.read_csv('CSV/test.csv')
+    mascara_test = unreceived['ASIN'].isin(test['ASIN'])
+
+    test1 = unreceived.loc[~mascara_test]
+
+    print('fin')
+
+
+if __name__ == '__main__':
+    asins()
