@@ -1,12 +1,10 @@
 import ffautomation
+import fileupdate
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QApplication,
-    QLabel,
-    QMainWindow,
-    QPushButton,
-    QVBoxLayout,
-    QWidget, QComboBox, QTextEdit, QDialog, QDialogButtonBox, QStackedLayout, QHBoxLayout, QLineEdit,
+    QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox, QTextEdit, QDialog,
+    QDialogButtonBox, QHBoxLayout, QLineEdit, QFileDialog,
 )
 
 
@@ -106,6 +104,7 @@ class CustomDialog(QDialog):
 
         self.layout = QVBoxLayout()
         message = QTextEdit()
+        message.setReadOnly(True)
         message.setPlainText(text)
         self.layout.addWidget(message)
         self.layout.addWidget(self.buttonBox)
@@ -133,6 +132,17 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.list)
         layout.addWidget(self.items)
         layout.addWidget(self.ok_button)
+
+        update_unreceived = QAction('Update Unreceived', self)
+        update_unreceived.triggered.connect(self.update_unreceived_file)
+
+        update_asin = QAction('Update Codes', self)
+        update_asin.triggered.connect(self.update_codes_file)
+
+        menu = self.menuBar()
+        file_menu = menu.addMenu('Update')
+        file_menu.addAction(update_unreceived)
+        file_menu.addAction(update_asin)
 
         widget = QWidget()
         widget.setLayout(layout)
@@ -190,6 +200,32 @@ class MainWindow(QMainWindow):
 
         dlg = CustomDialog(parent=self, text=text)
         dlg.exec()
+
+    def update_unreceived_file(self):
+        file_name = QFileDialog.getOpenFileName(self)[0]
+        if file_name:
+            fileupdate.new_packages(file_name)
+            dlg = CustomDialog(self, 'done')
+            dlg.exec()
+        else:
+            return
+
+    def update_codes_file(self):
+        file_name = QFileDialog.getOpenFileName(self)[0]
+        if file_name:
+            asin, country = fileupdate.asins(file_name)
+            text = f'{len(asin)} rows need to be added'
+            dlg = CustomDialog(self, text)
+            dlg.exec()
+            text = "\n".join(asin)
+            dlg = CustomDialog(self, text)
+            dlg.exec()
+            text = "\n".join(country)
+            dlg = CustomDialog(self, text)
+            dlg.exec()
+
+        else:
+            return
 
 
 if __name__ == "__main__":

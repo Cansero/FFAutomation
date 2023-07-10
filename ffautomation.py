@@ -278,7 +278,7 @@ def pre_manifest(list_from_program, time_to_sleep):
         matches = len(driver.find_elements(by=By.XPATH, value="//tbody/tr/td[3]"
                                                               "//*[contains(text(),'{}')]".format(outbound)))
 
-        if not results:
+        if results == 0:
             state.append(f'{place}.- {outbound} - Not found')
 
         elif matches > 1:
@@ -444,11 +444,11 @@ def problemas(list_from_program, referencias):
 
         results = len(driver.find_elements(by=By.XPATH, value="//tbody/tr"))
 
-        if not results:
+        if results == 0:
             messages.append('Not found')
 
         if results > 1:
-            messages.append('Not solvable')
+            messages.append('Need assistance')
 
         else:
             trkng = detect_tracking(driver, row)
