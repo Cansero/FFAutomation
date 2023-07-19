@@ -442,12 +442,16 @@ def problemas(list_from_program, referencias):
     for tracking, reference in zip(list_from_program, referencias):
         search_by_ref(driver, reference)
 
-        results = len(driver.find_elements(by=By.XPATH, value="//tbody/tr"))
+        try:
+            results = len(driver.find_elements(by=By.XPATH, value="//tbody/tr"))
+        except NoSuchElementException:
+            results = False
 
-        if results == 0:
+        if not results:
+
             messages.append('Not found')
 
-        if results > 1:
+        elif results > 1:
             messages.append('Need assistance')
 
         else:

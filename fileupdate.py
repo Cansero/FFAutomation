@@ -1,5 +1,6 @@
 import pandas as pd
 import gspread
+from PySide6.QtWidgets import QFileDialog
 
 gc = gspread.oauth(
     credentials_filename='credentials.json',
@@ -65,6 +66,7 @@ def asins(directory):
     coo = coo.set_index('COUNTRY')
 
     unreceived['Country'] = unreceived['Country'].map(coo['ALPHA 2'])
+    unreceived = unreceived.fillna(value={'Country': 'CN'})
 
     asin = unreceived['ASIN'].tolist()
     country = unreceived['Country'].tolist()
