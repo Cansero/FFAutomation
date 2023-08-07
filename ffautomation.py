@@ -9,12 +9,16 @@ from selenium.common.exceptions import NoAlertPresentException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service as ChromeService
 
 import main
 import references
 
 options = webdriver.ChromeOptions()
 options.add_argument('ignore-certificate-errors')
+
+# * 134217728 comes from subprocess.CREATE_NO_WINDOW
+chrome_service = ChromeService(popen_kw={'creation_flags': 134217728})
 
 gc = gspread.oauth(
     credentials_filename='credentials.json',
@@ -205,7 +209,7 @@ def is_alert(driver):
 
 def receiving(list_from_program, time_to_sleep):
 
-    driver = webdriver.Chrome(chrome_options=options)
+    driver = webdriver.Chrome(chrome_options=options, service=chrome_service)
     driver.get(references.url)
 
     log_in(driver)

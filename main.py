@@ -1,3 +1,7 @@
+import sys
+
+from PySide6 import QtCore, QtGui
+
 import ffautomation
 import fileupdate
 from PySide6.QtCore import QSize
@@ -6,6 +10,14 @@ from PySide6.QtWidgets import (
     QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox, QTextEdit, QDialog,
     QDialogButtonBox, QHBoxLayout, QLineEdit, QFileDialog,
 )
+
+
+class EmittingStream(QtCore.QObject):
+
+    textWritten = QtCore.Signal(str)
+
+    def write(self, text):
+        self.textWritten.emit(str(text))
 
 
 class InputWin(QDialog):
@@ -119,6 +131,8 @@ class MainWindow(QMainWindow):
 
         self.sleep_time = 0.5
 
+        sys.stdout = EmittingStream(textWritten=self.normalOutputWritten)
+
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
         self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Codes', 'Problems'])
@@ -127,11 +141,15 @@ class MainWindow(QMainWindow):
         self.ok_button = QPushButton('OK')
         self.ok_button.pressed.connect(self.automation)
 
+        self.terminal = QTextEdit()
+        self.terminal.setReadOnly(True)
+
         layout = QVBoxLayout()
         layout.addWidget(self.text)
         layout.addWidget(self.list)
         layout.addWidget(self.items)
         layout.addWidget(self.ok_button)
+        layout.addWidget(self.terminal)
 
         update_unreceived = QAction('Update Unreceived', self)
         update_unreceived.triggered.connect(self.update_unreceived_file)
@@ -153,6 +171,7 @@ class MainWindow(QMainWindow):
         info = self.items.toPlainText()
         self.items.clear()
         text = ''
+        print(option)
 
         if option == 'Receiving':
             packages = info.split()
@@ -226,6 +245,15 @@ class MainWindow(QMainWindow):
 
         else:
             return
+
+    def normalOutputWritten(self, text):
+        """Append text to the QTextEdit."""
+        # Maybe QTextEdit.append() works as well, but this is how I do it:
+        cursor = self.terminal.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.terminal.setTextCursor(cursor)
+        self.terminal.ensureCursorVisible()
 
 
 if __name__ == "__main__":
