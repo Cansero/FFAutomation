@@ -60,51 +60,51 @@ class MainWindow(QMainWindow):
         info = self.items.toPlainText()
         self.items.clear()
         text = ''
-        print(option)
 
-        if option == 'Receiving':
-            packages = info.split()
+        match option:
+            case 'Receiving':
+                packages = info.split()
 
-            cheking = packages[1::2]
-            if not all(map(lambda x: True if x[0:2] == 'NS' or x[0:2] == 'N/' else False, cheking)):
-                alert = CustomDialog(parent=self, text='Incorrect information provided')
-                alert.exec()
-                return
+                cheking = packages[1::2]
+                if not all(map(lambda x: True if x[0:2] == 'NS' or x[0:2] == 'N/' else False, cheking)):
+                    alert = CustomDialog(parent=self, text='Incorrect information provided')
+                    alert.exec()
+                    return
 
-            packages_nship = [[A, B] for A, B in zip(packages[0::2], packages[1::2])]
-            repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time)
-            dictionary = {"Repeated": repeated, "Holds": holds, "Problems": problems, "Not found": not_found}
+                packages_nship = [[A, B] for A, B in zip(packages[0::2], packages[1::2])]
+                repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time)
+                dictionary = {"Repeated": repeated, "Holds": holds, "Problems": problems, "Not found": not_found}
 
-            for category in dictionary:
-                if dictionary[category]:
-                    text += "{}:\n".format(category)
-                    for value in dictionary[category]:
-                        text += value + '\n'
-            if not text:
-                text += 'All packages found'
+                for category in dictionary:
+                    if dictionary[category]:
+                        text += "{}:\n".format(category)
+                        for value in dictionary[category]:
+                            text += value + '\n'
+                if not text:
+                    text += 'All packages found'
 
-        elif option == 'Pre-manifest':
-            outbounds = info.split()
-            state = ffautomation.pre_manifest(outbounds, self.sleep_time)
-            text = "\n".join(state)
+            case 'Pre-manifest':
+                outbounds = info.split()
+                state = ffautomation.pre_manifest(outbounds, self.sleep_time)
+                text = "\n".join(state)
 
-        elif option == 'Print Label':
-            packages = info.split()
-            message = ffautomation.print_label(packages)
-            text = "\n".join(message)
-
-        elif option == 'Codes':
-            asins = info.split()
-            message = ffautomation.codes(asins)
-            text = "\n".join(message)
-
-        elif option == 'Problems':
-            a = InputWin(parent=self)
-            if a.exec():
-                message = ffautomation.problemas(info.split(), a.user_input.split())
+            case 'Print Label':
+                packages = info.split()
+                message = ffautomation.print_label(packages)
                 text = "\n".join(message)
-            else:
-                return
+
+            case 'Codes':
+                asins = info.split()
+                message = ffautomation.codes(asins)
+                text = "\n".join(message)
+
+            case 'Problems':
+                a = InputWin(parent=self)
+                if a.exec():
+                    message = ffautomation.problemas(info.split(), a.user_input.split())
+                    text = "\n".join(message)
+                else:
+                    return
 
         dlg = CustomDialog(parent=self, text=text)
         dlg.exec()

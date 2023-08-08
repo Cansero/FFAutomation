@@ -1,6 +1,6 @@
 from configparser import ConfigParser
-from PySide6.QtWidgets import QDialog, QMainWindow, QLabel, QPushButton, QVBoxLayout, QLineEdit, QApplication, QWidget, \
-    QHBoxLayout, QSpinBox, QDoubleSpinBox, QDialogButtonBox
+from PySide6.QtWidgets import QDialog, QMainWindow, QLabel, QPushButton, QVBoxLayout, QLineEdit, QApplication, QWidget,\
+    QHBoxLayout, QSpinBox, QDoubleSpinBox, QDialogButtonBox, QComboBox
 
 config = ConfigParser()
 config.read('settings.ini')
@@ -85,10 +85,14 @@ class MainWindow(QMainWindow):
         button = QPushButton('Settings')
         button.clicked.connect(self.open_settings)
 
+        self.list = QComboBox()
+        self.list.addItems(['test', 'test2', 'test3', 'test4', 'test5'])
+
         layout = QVBoxLayout()
         layout.addWidget(label)
         layout.addWidget(ok)
         layout.addWidget(button)
+        layout.addWidget(self.list)
 
         widget = QWidget()
         widget.setLayout(layout)
@@ -100,7 +104,20 @@ class MainWindow(QMainWindow):
             self.user = settings.get_user
 
     def presionado(self):
-        print(self.user)
+        text = ''
+        match self.list.currentText():
+            case 'test' | 'test2':
+                text = 'opt1'
+            # case 'test2':
+            #     text = 'opt2'
+            case 'test3':
+                text = 'opt3'
+            case 'test4':
+                text = 'opt4'
+            case 'test5':
+                text = 'opt5'
+
+        print(text)
 
 
 if __name__ == '__main__':

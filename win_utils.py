@@ -11,6 +11,10 @@ class EmittingStream(QtCore.QObject):
     def write(self, text):
         self.textWritten.emit(str(text))
 
+    def flush(self):
+        """Just to avoid warning message on console"""
+        pass
+
 
 class InputWin(QDialog):
     def __init__(self, parent=None):
