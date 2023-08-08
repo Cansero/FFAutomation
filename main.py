@@ -1,126 +1,15 @@
 import sys
 
-from PySide6 import QtCore, QtGui
-
-import ffautomation
-import fileupdate
+from PySide6 import QtGui
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox, QTextEdit, QDialog,
-    QDialogButtonBox, QHBoxLayout, QLineEdit, QFileDialog,
+    QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox, QTextEdit, QFileDialog,
 )
 
-
-class EmittingStream(QtCore.QObject):
-
-    textWritten = QtCore.Signal(str)
-
-    def write(self, text):
-        self.textWritten.emit(str(text))
-
-
-class InputWin(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumSize(QSize(450, 150))
-        self.setWindowTitle("Attention")
-
-        self.userinput = ''
-
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accepted_win)
-        self.buttonBox.rejected.connect(self.reject)
-
-        self.layout = QVBoxLayout()
-        self.message = QLabel('Add references:')
-        self.input_text = QTextEdit()
-        self.input_text.setAcceptRichText(False)
-
-        self.layout.addWidget(self.message)
-        self.layout.addWidget(self.input_text)
-        self.layout.addWidget(self.buttonBox)
-
-        self.setLayout(self.layout)
-
-    def accepted_win(self):
-        self.userinput = self.input_text.toPlainText()
-        self.accept()
-
-    @property
-    def user_input(self):
-        return self.userinput
-
-
-class OptionSelection(QDialog):
-    def __init__(self, labels=None, desc=None):
-        super().__init__()
-        self.setMinimumSize(QSize(450, 150))
-        self.selection = None
-        self.item_desc = desc
-        self.setWindowTitle('Options')
-
-        QBtn = QDialogButtonBox.Ok
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-
-        layout = QVBoxLayout()
-
-        etiquetas = labels
-        if labels:
-            for label in etiquetas:
-                btn = QPushButton(label)
-                btn.setAutoDefault(False)
-                btn.clicked.connect(self.select_option)
-                layout.addWidget(btn)
-
-        label_text = QHBoxLayout()
-        option = QLabel('Not Correct?')
-        self.text = QLineEdit()
-        self.text.returnPressed.connect(self.try_match)
-        label_text.addWidget(option)
-        label_text.addWidget(self.text)
-
-        layout.addLayout(label_text)
-
-        self.setLayout(layout)
-
-    def select_option(self):
-        self.selection = self.sender().text()
-        self.accept()
-
-    def try_match(self):
-        palabra = self.text.text().upper()
-        self.text.clear()
-        if palabra in self.item_desc:
-            self.selection = palabra
-            self.accept()
-
-    @property
-    def get_selection(self):
-        return self.selection
-
-
-class CustomDialog(QDialog):
-    def __init__(self, parent=None, text=None):
-        super().__init__(parent)
-        self.setMinimumSize(QSize(450, 150))
-        self.setWindowTitle("Attention")
-
-        QBtn = QDialogButtonBox.Ok
-
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-
-        self.layout = QVBoxLayout()
-        message = QTextEdit()
-        message.setReadOnly(True)
-        message.setPlainText(text)
-        self.layout.addWidget(message)
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
+import ffautomation
+import fileupdate
+from win_utils import EmittingStream, CustomDialog, InputWin
 
 
 class MainWindow(QMainWindow):
@@ -131,7 +20,7 @@ class MainWindow(QMainWindow):
 
         self.sleep_time = 0.5
 
-        sys.stdout = EmittingStream(textWritten=self.normalOutputWritten)
+        sys.stdout = EmittingStream(textWritten=self.normal_output_written)
 
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
@@ -177,7 +66,7 @@ class MainWindow(QMainWindow):
             packages = info.split()
 
             cheking = packages[1::2]
-            if not all(map(lambda a: True if a[0:2] == 'NS' or a[0:2] == 'N/' else False, cheking)):
+            if not all(map(lambda x: True if x[0:2] == 'NS' or x[0:2] == 'N/' else False, cheking)):
                 alert = CustomDialog(parent=self, text='Incorrect information provided')
                 alert.exec()
                 return
@@ -246,9 +135,7 @@ class MainWindow(QMainWindow):
         else:
             return
 
-    def normalOutputWritten(self, text):
-        """Append text to the QTextEdit."""
-        # Maybe QTextEdit.append() works as well, but this is how I do it:
+    def normal_output_written(self, text):
         cursor = self.terminal.textCursor()
         cursor.movePosition(QtGui.QTextCursor.End)
         cursor.insertText(text)

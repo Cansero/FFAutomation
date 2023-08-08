@@ -5,8 +5,8 @@ import pyautogui
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 
-import main
 from ff_utils import *
+from win_utils import OptionSelection
 
 options = webdriver.ChromeOptions()
 options.add_argument('ignore-certificate-errors')
@@ -240,7 +240,7 @@ def codes(list_from_program):
 
         match_finder(title, item_desc, matches)
 
-        sel = main.OptionSelection(labels=matches, desc=item_desc)
+        sel = OptionSelection(labels=matches, desc=item_desc)
         sel.exec()
         cells_values.append(sel.get_selection)
 
