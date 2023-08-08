@@ -1,6 +1,5 @@
 import pandas as pd
 import gspread
-from PySide6.QtWidgets import QFileDialog
 
 gc = gspread.oauth(
     credentials_filename='credentials/credentials.json',
