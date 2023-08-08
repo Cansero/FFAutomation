@@ -21,8 +21,8 @@ options.add_argument('ignore-certificate-errors')
 chrome_service = ChromeService(popen_kw={'creation_flags': 134217728})
 
 gc = gspread.oauth(
-    credentials_filename='credentials.json',
-    authorized_user_filename='authorized_user.json'
+    credentials_filename='credentials/credentials.json',
+    authorized_user_filename='credentials/authorized_user.json'
 )
 
 today = datetime.today().strftime('%m/%d/%y')
