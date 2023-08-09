@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 import ffautomation
 import fileupdate
 from win_utils import EmittingStream, CustomDialog, InputWin
+from win_settings import Settings
 
 
 class MainWindow(QMainWindow):
@@ -18,7 +19,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('FF Automation')
         self.setMinimumSize(QSize(350, 450))
 
-        self.sleep_time = 0.5
+        self.settings = Settings()
+        self.user = None
+        self.sleep_time = None
+        self.name = None
+        self.update_data()
 
         sys.stdout = EmittingStream(textWritten=self.normal_output_written)
 
@@ -46,10 +51,14 @@ class MainWindow(QMainWindow):
         update_asin = QAction('Update Codes', self)
         update_asin.triggered.connect(self.update_codes_file)
 
+        settings = QAction('Settings', self)
+        settings.triggered.connect(self.open_settings)
+
         menu = self.menuBar()
         file_menu = menu.addMenu('Update')
         file_menu.addAction(update_unreceived)
         file_menu.addAction(update_asin)
+        menu.addAction(settings)
 
         widget = QWidget()
         widget.setLayout(layout)
@@ -141,6 +150,15 @@ class MainWindow(QMainWindow):
         cursor.insertText(text)
         self.terminal.setTextCursor(cursor)
         self.terminal.ensureCursorVisible()
+
+    def open_settings(self):
+        if self.settings.exec():
+            self.update_data()
+
+    def update_data(self):
+        self.user = self.settings.get_user
+        self.sleep_time = self.settings.get_item('sleep_time', 'float')
+        self.name = self.settings.get_item('name')
 
 
 if __name__ == "__main__":
