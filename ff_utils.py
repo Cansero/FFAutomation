@@ -148,16 +148,17 @@ def detect_tracking(driver, place):
             return 'No se pudo'
 
 
-def write_comment(driver, place, date, method=None, inbound=None, previous_track=None):
+def write_comment(driver, place, date, method=None, inbound=None, previous_track=None, initials='IM'):
     mensaje = ''
     if method == '1':  # When inbound is None or Link to Amazon
-        mensaje = f'CM - We received inbound {inbound} - IM {date}'
+        mensaje = f'CM - We received inbound {inbound} - {initials} {date}'
 
     elif method == '2':  # When inbound different to the one we received
-        mensaje = f'CM - We received inbound {inbound} Please update - IM {date}\n\n{previous_track} not received'
+        mensaje = (f'CM - We received inbound {inbound} Please update'
+                   f' - {initials} {date}\n\n{previous_track} not received')
 
     elif method == '3':  # When received two different inbounds
-        mensaje = f'CM - We received additional inbound. Please add entry - IM {date}\n\n{inbound}'
+        mensaje = f'CM - We received additional inbound. Please add entry - {initials} {date}\n\n{inbound}'
 
     note = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place))
     actual_comment = note.text

@@ -248,7 +248,7 @@ def codes(list_from_program):
     return cells_values
 
 
-def problemas(list_from_program, referencias):
+def problemas(list_from_program, referencias, initials=None):
 
     buffalo = gc.open("BUFFALO WAREHOUSE").worksheet(f'{month}')
 
@@ -287,7 +287,8 @@ def problemas(list_from_program, referencias):
                 else:
                     method_no = '3'
 
-            write_comment(driver, row, today, method=method_no, inbound=tracking, previous_track=trkng)
+            write_comment(driver, row, today, method=method_no, inbound=tracking,
+                          previous_track=trkng, initials=initials)
             place_as('Problems for Client', driver, row)
             messages.append('Problem for Client')
 
