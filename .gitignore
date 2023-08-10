@@ -1,11 +1,10 @@
 venv
-authorized_user.json
-credentials.json
+credentials
 references.py
 .idea
 __pycache__/
 main.spec
 build
 dist
-favicon_fastfwdtech.ico
+img
 CSV

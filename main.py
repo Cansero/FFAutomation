@@ -1,114 +1,16 @@
-import ffautomation
-import fileupdate
+import sys
+
+from PySide6 import QtGui
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox, QTextEdit, QDialog,
-    QDialogButtonBox, QHBoxLayout, QLineEdit, QFileDialog,
+    QApplication, QLabel, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox, QTextEdit, QFileDialog,
 )
 
-
-class InputWin(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumSize(QSize(450, 150))
-        self.setWindowTitle("Attention")
-
-        self.userinput = ''
-
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accepted_win)
-        self.buttonBox.rejected.connect(self.reject)
-
-        self.layout = QVBoxLayout()
-        self.message = QLabel('Add references:')
-        self.input_text = QTextEdit()
-        self.input_text.setAcceptRichText(False)
-
-        self.layout.addWidget(self.message)
-        self.layout.addWidget(self.input_text)
-        self.layout.addWidget(self.buttonBox)
-
-        self.setLayout(self.layout)
-
-    def accepted_win(self):
-        self.userinput = self.input_text.toPlainText()
-        self.accept()
-
-    @property
-    def user_input(self):
-        return self.userinput
-
-
-class OptionSelection(QDialog):
-    def __init__(self, labels=None, desc=None):
-        super().__init__()
-        self.setMinimumSize(QSize(450, 150))
-        self.selection = None
-        self.item_desc = desc
-        self.setWindowTitle('Options')
-
-        QBtn = QDialogButtonBox.Ok
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-
-        layout = QVBoxLayout()
-
-        etiquetas = labels
-        if labels:
-            for label in etiquetas:
-                btn = QPushButton(label)
-                btn.setAutoDefault(False)
-                btn.clicked.connect(self.select_option)
-                layout.addWidget(btn)
-
-        label_text = QHBoxLayout()
-        option = QLabel('Not Correct?')
-        self.text = QLineEdit()
-        self.text.returnPressed.connect(self.try_match)
-        label_text.addWidget(option)
-        label_text.addWidget(self.text)
-
-        layout.addLayout(label_text)
-
-        self.setLayout(layout)
-
-    def select_option(self):
-        self.selection = self.sender().text()
-        self.accept()
-
-    def try_match(self):
-        palabra = self.text.text().upper()
-        self.text.clear()
-        if palabra in self.item_desc:
-            self.selection = palabra
-            self.accept()
-
-    @property
-    def get_selection(self):
-        return self.selection
-
-
-class CustomDialog(QDialog):
-    def __init__(self, parent=None, text=None):
-        super().__init__(parent)
-        self.setMinimumSize(QSize(450, 150))
-        self.setWindowTitle("Attention")
-
-        QBtn = QDialogButtonBox.Ok
-
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-
-        self.layout = QVBoxLayout()
-        message = QTextEdit()
-        message.setReadOnly(True)
-        message.setPlainText(text)
-        self.layout.addWidget(message)
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
+import ffautomation
+import fileupdate
+from win_utils import EmittingStream, CustomDialog, InputWin
+from win_settings import Settings
 
 
 class MainWindow(QMainWindow):
@@ -117,7 +19,14 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('FF Automation')
         self.setMinimumSize(QSize(350, 450))
 
-        self.sleep_time = 0.5
+        self.settings = Settings(parent=self)
+        self.user = None
+        self.sleep_time = None
+        self.name = None
+        self.minimized = None
+        self.update_data()
+
+        sys.stdout = EmittingStream(textWritten=self.normal_output_written)
 
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
@@ -127,11 +36,15 @@ class MainWindow(QMainWindow):
         self.ok_button = QPushButton('OK')
         self.ok_button.pressed.connect(self.automation)
 
+        self.terminal = QTextEdit()
+        self.terminal.setReadOnly(True)
+
         layout = QVBoxLayout()
         layout.addWidget(self.text)
         layout.addWidget(self.list)
         layout.addWidget(self.items)
         layout.addWidget(self.ok_button)
+        layout.addWidget(self.terminal)
 
         update_unreceived = QAction('Update Unreceived', self)
         update_unreceived.triggered.connect(self.update_unreceived_file)
@@ -139,10 +52,14 @@ class MainWindow(QMainWindow):
         update_asin = QAction('Update Codes', self)
         update_asin.triggered.connect(self.update_codes_file)
 
+        settings = QAction('Settings', self)
+        settings.triggered.connect(self.open_settings)
+
         menu = self.menuBar()
         file_menu = menu.addMenu('Update')
         file_menu.addAction(update_unreceived)
         file_menu.addAction(update_asin)
+        menu.addAction(settings)
 
         widget = QWidget()
         widget.setLayout(layout)
@@ -154,49 +71,52 @@ class MainWindow(QMainWindow):
         self.items.clear()
         text = ''
 
-        if option == 'Receiving':
-            packages = info.split()
+        match option:
+            case 'Receiving':
+                packages = info.split()
 
-            cheking = packages[1::2]
-            if not all(map(lambda a: True if a[0:2] == 'NS' or a[0:2] == 'N/' else False, cheking)):
-                alert = CustomDialog(parent=self, text='Incorrect information provided')
-                alert.exec()
-                return
+                cheking = packages[1::2]
+                if not all(map(lambda x: True if x[0:2] == 'NS' or x[0:2] == 'N/' else False, cheking)):
+                    alert = CustomDialog(parent=self, text='Incorrect information provided')
+                    alert.exec()
+                    return
 
-            packages_nship = [[A, B] for A, B in zip(packages[0::2], packages[1::2])]
-            repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time)
-            dictionary = {"Repeated": repeated, "Holds": holds, "Problems": problems, "Not found": not_found}
+                packages_nship = [[A, B] for A, B in zip(packages[0::2], packages[1::2])]
+                repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time,
+                                                                              run_minimized=self.minimized)
+                dictionary = {"Repeated": repeated, "Holds": holds, "Problems": problems, "Not found": not_found}
 
-            for category in dictionary:
-                if dictionary[category]:
-                    text += "{}:\n".format(category)
-                    for value in dictionary[category]:
-                        text += value + '\n'
-            if not text:
-                text += 'All packages found'
+                for category in dictionary:
+                    if dictionary[category]:
+                        text += "{}:\n".format(category)
+                        for value in dictionary[category]:
+                            text += value + '\n'
+                if not text:
+                    text += 'All packages found'
 
-        elif option == 'Pre-manifest':
-            outbounds = info.split()
-            state = ffautomation.pre_manifest(outbounds, self.sleep_time)
-            text = "\n".join(state)
+            case 'Pre-manifest':
+                outbounds = info.split()
+                state = ffautomation.pre_manifest(outbounds, self.sleep_time, run_minimized=self.minimized)
+                text = "\n".join(state)
 
-        elif option == 'Print Label':
-            packages = info.split()
-            message = ffautomation.print_label(packages)
-            text = "\n".join(message)
-
-        elif option == 'Codes':
-            asins = info.split()
-            message = ffautomation.codes(asins)
-            text = "\n".join(message)
-
-        elif option == 'Problems':
-            a = InputWin(parent=self)
-            if a.exec():
-                message = ffautomation.problemas(info.split(), a.user_input.split())
+            case 'Print Label':
+                packages = info.split()
+                message = ffautomation.print_label(packages)
                 text = "\n".join(message)
-            else:
-                return
+
+            case 'Codes':
+                asins = info.split()
+                message = ffautomation.codes(asins)
+                text = "\n".join(message)
+
+            case 'Problems':
+                a = InputWin(parent=self)
+                if a.exec():
+                    message = ffautomation.problemas(info.split(), a.user_input.split(),
+                                                     initials=self.name, run_minimized=self.minimized)
+                    text = "\n".join(message)
+                else:
+                    return
 
         dlg = CustomDialog(parent=self, text=text)
         dlg.exec()
@@ -226,6 +146,23 @@ class MainWindow(QMainWindow):
 
         else:
             return
+
+    def normal_output_written(self, text):
+        cursor = self.terminal.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.terminal.setTextCursor(cursor)
+        self.terminal.ensureCursorVisible()
+
+    def open_settings(self):
+        if self.settings.exec():
+            self.update_data()
+
+    def update_data(self):
+        self.user = self.settings.get_user
+        self.sleep_time = self.settings.get_item('sleep_time', 'float')
+        self.name = self.settings.get_item('name')
+        self.minimized = self.settings.get_item('run_minimized', 'boolean')
 
 
 if __name__ == "__main__":

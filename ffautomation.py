@@ -1,211 +1,33 @@
-from time import sleep
 from datetime import datetime
 
-import re
 import gspread
 import pyautogui
 from selenium import webdriver
-from selenium.common.exceptions import NoAlertPresentException
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service as ChromeService
 
-import main
-import references
+from ff_utils import *
+from win_utils import OptionSelection
 
 options = webdriver.ChromeOptions()
 options.add_argument('ignore-certificate-errors')
 
+# 134217728 comes from subprocess.CREATE_NO_WINDOW
+chrome_service = ChromeService(popen_kw={'creation_flags': 134217728})
+
 gc = gspread.oauth(
-    credentials_filename='credentials.json',
-    authorized_user_filename='authorized_user.json'
+    credentials_filename='credentials/credentials.json',
+    authorized_user_filename='credentials/authorized_user.json'
 )
 
 today = datetime.today().strftime('%m/%d/%y')
 month = datetime.today().strftime('%Y-%m')
 
 
-def log_in(driver):
-    while True:
-        try:
-            driver.find_element(by=By.XPATH, value='/html/body/div[3]/form/div/div[1]/input').send_keys(references.user)
-            driver.find_element(by=By.XPATH, value='/html/body/div[3]/form/div/div[2]/input').\
-                send_keys(references.password)
-            driver.find_element(by=By.XPATH, value='/html/body/div[3]/form/div/div[3]/button').click()
-            return
+def receiving(list_from_program, time_to_sleep, run_minimized=False):
 
-        except NoSuchElementException:
-            sleep(2)
-            driver.refresh()
-
-
-def search_tracking(driver, tracking):
-    while True:
-        try:
-            trkng_box = driver.find_element(by=By.NAME, value='search_tracking_number')
-            trkng_box.clear()
-            trkng_box.send_keys(tracking)
-            trkng_box.send_keys(Keys.RETURN)
-            return
-        except NoSuchElementException:
-            sleep(2)
-            driver.refresh()
-
-
-def search_by_ref(driver, reference):
-    while True:
-        try:
-            reference_box = driver.find_element(by=By.NAME, value='search_unique_code')
-            reference_box.clear()
-            reference_box.send_keys(reference)
-            reference_box.send_keys(Keys.RETURN)
-            return
-        except NoSuchElementException:
-            sleep(2)
-            driver.refresh()
-
-
-def detect_state(driver, place):
-    state = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[2]"
-                                                   "//a[contains(@class,'active')]".format(place)).text
-    return state
-
-
-def is_hold(driver, place):
-    try:
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]"
-                                               "//*[contains(text(),'HOLD REQUEST')]".format(place))
-        return True
-    except NoSuchElementException:
-        return False
-
-
-def place_as(state, driver, place):
-    try:
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[2]"
-                                               "//*[contains(text(),'{}')]".format(place, state)).click()
-    except NoSuchElementException:
-        print("Can't place as {}".format(state))
-
-
-def place_nship(driver, place, nship):
-    try:
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[1]".format(place)).click()
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//input".format(place)).clear()
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//input".format(place)).send_keys(nship)
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
-    except NoSuchElementException:
-        print("Can't place nship")
-
-
-def has_outbound(driver, place):
-    try:
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]"
-                                               "//*[contains(text(),'label')]".format(place))
-        return True
-    except NoSuchElementException:
-        return False
-
-
-def find_match(driver, place, tracking):
-    try:
-        driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]"
-                                               "//*[contains(text(),'{}')]".format(place, tracking))
-        return True
-    except NoSuchElementException:
-        return False
-
-
-def accept_alert(driver):
-    sleep(0.3)
-    try:
-        alert = driver.switch_to.alert
-        alert.accept()
-    except NoAlertPresentException:
-        pass
-
-
-def match_finder(search, list_to_match, container):
-    n = 0
-    while n + 2 < len(search):
-        result = search[n] + " " + search[n + 1] + " " + search[n + 2]
-        result = result.upper()
-        if result in list_to_match and result not in container:
-            container.append(result)
-        n += 1
-
-    n = 0
-    while n + 1 < len(search):
-        result = search[n] + " " + search[n + 1]
-        result = result.upper()
-        if result in list_to_match and result not in container:
-            container.append(result)
-        n += 1
-
-    n = 0
-    while n < len(search):
-        result = search[n]
-        result = result.upper()
-        if result in list_to_match and result not in container:
-            container.append(result)
-        n += 1
-
-
-def detect_tracking(driver, place):
-    if find_match(driver, place, 'none'):
-        return 'none'
-    elif find_match(driver, place, 'link to amazon'):
-        return 'link to amazon '
-
-    else:
-        try:
-            result = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[3]//span//child::button".format(place))\
-                .get_attribute('data-clipboard-text')
-            return result
-        except NoSuchElementException:
-            return 'No se pudo'
-
-
-def write_comment(driver, place, date, method=None, inbound=None, previous_track=None):
-    mensaje = ''
-    if method == '1':  # When inbound is None or Link to Amazon
-        mensaje = f'CM - We received inbound {inbound} - IM {date}'
-
-    elif method == '2':  # When inbound different to the one we received
-        mensaje = f'CM - We received inbound {inbound} Please update - IM {date}\n\n{previous_track} not received'
-
-    elif method == '3':  # When received two different inbounds
-        mensaje = f'CM - We received additional inbound. Please add entry - IM {date}\n\n{inbound}'
-
-    note = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place))
-    actual_comment = note.text
-    note.click()
-    text_box = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place))
-
-    if actual_comment == '<click>':
-        pass
-
-    elif actual_comment != '<click>':
-        if re.search('\d{6}$', actual_comment):
-            mensaje = f'\n{inbound}'
-        else:
-            mensaje = f'\n\n{mensaje}'
-
-    text_box.send_keys(mensaje)
-    driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
-
-
-def is_alert(driver):
-    try:
-        premanifests = driver.find_element(by=By.CLASS_NAME, value='shipment-size-readout').text.split()[0]
-        return True if premanifests == '50' else False
-    except NoSuchElementException:
-        return True
-
-
-def receiving(list_from_program, time_to_sleep):
-
-    driver = webdriver.Chrome(chrome_options=options)
+    driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
     driver.get(references.url)
 
     log_in(driver)
@@ -260,9 +82,11 @@ def receiving(list_from_program, time_to_sleep):
     return repeated, holds, problems, not_found
 
 
-def pre_manifest(list_from_program, time_to_sleep):
+def pre_manifest(list_from_program, time_to_sleep, run_minimized=False):
 
-    driver = webdriver.Chrome(chrome_options=options)
+    driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
     driver.get(references.url)
 
     log_in(driver)
@@ -316,7 +140,7 @@ def print_label(list_from_program):
     ff_file = gc.open('FF File').sheet1.col_values(1)
     ff_file_nship = gc.open('FF File').sheet1.col_values(2)
 
-    driver = webdriver.Chrome(chrome_options=options)
+    driver = webdriver.Chrome(options=options, service=chrome_service)
     driver.get(references.url)
 
     log_in(driver)
@@ -420,7 +244,7 @@ def codes(list_from_program):
 
         match_finder(title, item_desc, matches)
 
-        sel = main.OptionSelection(labels=matches, desc=item_desc)
+        sel = OptionSelection(labels=matches, desc=item_desc)
         sel.exec()
         cells_values.append(sel.get_selection)
 
@@ -428,11 +252,13 @@ def codes(list_from_program):
     return cells_values
 
 
-def problemas(list_from_program, referencias):
+def problemas(list_from_program, referencias, initials=None, run_minimized=False):
 
     buffalo = gc.open("BUFFALO WAREHOUSE").worksheet(f'{month}')
 
-    driver = webdriver.Chrome(chrome_options=options)
+    driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
     driver.get(references.url)
 
     log_in(driver)
@@ -467,7 +293,8 @@ def problemas(list_from_program, referencias):
                 else:
                     method_no = '3'
 
-            write_comment(driver, row, today, method=method_no, inbound=tracking, previous_track=trkng)
+            write_comment(driver, row, today, method=method_no, inbound=tracking,
+                          previous_track=trkng, initials=initials)
             place_as('Problems for Client', driver, row)
             messages.append('Problem for Client')
 
