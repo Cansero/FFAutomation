@@ -19,10 +19,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('FF Automation')
         self.setMinimumSize(QSize(350, 450))
 
-        self.settings = Settings()
+        self.settings = Settings(parent=self)
         self.user = None
         self.sleep_time = None
         self.name = None
+        self.minimized = None
         self.update_data()
 
         sys.stdout = EmittingStream(textWritten=self.normal_output_written)
@@ -81,7 +82,8 @@ class MainWindow(QMainWindow):
                     return
 
                 packages_nship = [[A, B] for A, B in zip(packages[0::2], packages[1::2])]
-                repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time)
+                repeated, holds, problems, not_found = ffautomation.receiving(packages_nship, self.sleep_time,
+                                                                              run_minimized=self.minimized)
                 dictionary = {"Repeated": repeated, "Holds": holds, "Problems": problems, "Not found": not_found}
 
                 for category in dictionary:
@@ -94,7 +96,7 @@ class MainWindow(QMainWindow):
 
             case 'Pre-manifest':
                 outbounds = info.split()
-                state = ffautomation.pre_manifest(outbounds, self.sleep_time)
+                state = ffautomation.pre_manifest(outbounds, self.sleep_time, run_minimized=self.minimized)
                 text = "\n".join(state)
 
             case 'Print Label':
@@ -110,7 +112,8 @@ class MainWindow(QMainWindow):
             case 'Problems':
                 a = InputWin(parent=self)
                 if a.exec():
-                    message = ffautomation.problemas(info.split(), a.user_input.split())
+                    message = ffautomation.problemas(info.split(), a.user_input.split(),
+                                                     initials=self.name, run_minimized=self.minimized)
                     text = "\n".join(message)
                 else:
                     return
@@ -159,6 +162,7 @@ class MainWindow(QMainWindow):
         self.user = self.settings.get_user
         self.sleep_time = self.settings.get_item('sleep_time', 'float')
         self.name = self.settings.get_item('name')
+        self.minimized = self.settings.get_item('run_minimized', 'boolean')
 
 
 if __name__ == "__main__":

@@ -23,9 +23,11 @@ today = datetime.today().strftime('%m/%d/%y')
 month = datetime.today().strftime('%Y-%m')
 
 
-def receiving(list_from_program, time_to_sleep):
+def receiving(list_from_program, time_to_sleep, run_minimized=False):
 
     driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
     driver.get(references.url)
 
     log_in(driver)
@@ -80,9 +82,11 @@ def receiving(list_from_program, time_to_sleep):
     return repeated, holds, problems, not_found
 
 
-def pre_manifest(list_from_program, time_to_sleep):
+def pre_manifest(list_from_program, time_to_sleep, run_minimized=False):
 
     driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
     driver.get(references.url)
 
     log_in(driver)
@@ -248,11 +252,13 @@ def codes(list_from_program):
     return cells_values
 
 
-def problemas(list_from_program, referencias, initials=None):
+def problemas(list_from_program, referencias, initials=None, run_minimized=False):
 
     buffalo = gc.open("BUFFALO WAREHOUSE").worksheet(f'{month}')
 
     driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
     driver.get(references.url)
 
     log_in(driver)

@@ -1,14 +1,16 @@
 from configparser import ConfigParser
+
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QDoubleSpinBox, QSpinBox, QDialogButtonBox, \
-    QVBoxLayout
+    QVBoxLayout, QCheckBox
 
 config = ConfigParser()
 config.read('settings.ini')
 
 
 class Settings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.setWindowTitle('Settings')
 
         self.section = config.sections()[0] if len(config.sections()) else 'DEFAULT'
@@ -28,12 +30,19 @@ class Settings(QDialog):
         sleep_time_layout.addWidget(self.sleep_time)
 
         update_layout = QHBoxLayout()
-        update_label = QLabel('Delay for updates:')
+        update_label = QLabel('Delay for updates (WIP):')
         self.update = QSpinBox()
         self.update.setValue(config.getint(self.section, 'update_interval'))
         self.update.setSingleStep(1)
         update_layout.addWidget(update_label)
         update_layout.addWidget(self.update)
+
+        minimized_layout = QHBoxLayout()
+        minimized_label = QLabel('Run minimized:')
+        self.minimized = QCheckBox()
+        self.minimized.setChecked(config.getboolean(self.section, 'run_minimized'))
+        minimized_layout.addWidget(minimized_label)
+        minimized_layout.addWidget(self.minimized)
 
         btn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.Save
         self.buttonBox = QDialogButtonBox(btn)
@@ -45,6 +54,7 @@ class Settings(QDialog):
         layout.addLayout(initals_layout)
         layout.addLayout(sleep_time_layout)
         layout.addLayout(update_layout)
+        layout.addLayout(minimized_layout)
         layout.addWidget(self.buttonBox)
 
         self.setLayout(layout)
@@ -60,6 +70,8 @@ class Settings(QDialog):
             config.set(user, 'sleep_time', str(round(self.sleep_time.value(), 2)))
             config.set(user, 'name', user)
             config.set(user, 'update_interval', str(self.update.value()))
+            state = True if self.minimized.checkState() == Qt.CheckState.Checked else False
+            config.set(user, 'run_minimized', str(state))
 
             with open('settings.ini', 'w') as file:
                 config.write(file)
