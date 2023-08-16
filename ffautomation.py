@@ -217,7 +217,7 @@ def codes(list_from_program):
 
     item_desc = gc.open("CODES FINDER CA").worksheet("MASTER").col_values(1)
 
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(service=chrome_service)
     for asin in list_from_program:
         matches = []
         subtitle = None
