@@ -176,6 +176,22 @@ def write_comment(driver, place, date, method=None, inbound=None, previous_track
 
     text_box.send_keys(mensaje)
     driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
+    return
+
+
+def write_hold_comment(driver, place, date, initials='IM'):
+    mensaje = f'CM - We received this package. Please advise - {initials} {date}'
+
+    note = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/a[6]".format(place))
+    actual_comment = note.text
+    note.click()
+    text_box = driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//textarea".format(place))
+
+    mensaje = mensaje if actual_comment == '<click>' else f'\n\n{mensaje}'
+
+    text_box.send_keys(mensaje)
+    driver.find_element(by=By.XPATH, value="//tbody/tr[{}]/td[4]/div/span//button".format(place)).click()
+    return
 
 
 def is_alert(driver):
