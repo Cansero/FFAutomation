@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
 
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
-        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Codes', 'Problems'])
+        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Problems'])  # Codes option removed
         self.items = QTextEdit()
         self.items.setAcceptRichText(False)
         self.ok_button = QPushButton('OK')
@@ -88,26 +88,42 @@ class MainWindow(QMainWindow):
 
                 for category in dictionary:
                     if dictionary[category]:
-                        text += "{}:\n".format(category)
+                        text += f"{category}:\n"
                         for value in dictionary[category]:
                             text += value + '\n'
                 if not text:
                     text += 'All packages found'
 
+                print('\n' + text)
+
             case 'Pre-manifest':
                 outbounds = info.split()
                 state = ffautomation.pre_manifest(outbounds, self.sleep_time, run_minimized=self.minimized)
-                text = "\n".join(state)
+                state = [x.split() for x in state]
+                result = []
+                for x in state:
+                    if x[3] != 'Pre-manifested':
+                        result.append(x)
+                if not result:
+                    print('All packages pre-manifested')
+                else:
+                    print("\n".join(result))
 
             case 'Print Label':
                 packages = info.split()
                 message = ffautomation.print_label(packages)
                 text = "\n".join(message)
 
+                dlg = CustomDialog(parent=self, text=text)
+                dlg.exec()
+
             case 'Codes':
                 asins = info.split()
                 message = ffautomation.codes(asins)
                 text = "\n".join(message)
+
+                dlg = CustomDialog(parent=self, text=text)
+                dlg.exec()
 
             case 'Problems':
                 a = InputWin(parent=self)
@@ -115,18 +131,17 @@ class MainWindow(QMainWindow):
                     message = ffautomation.problemas(info.split(), a.user_input.split(),
                                                      initials=self.name, run_minimized=self.minimized)
                     text = "\n".join(message)
+
+                    dlg = CustomDialog(parent=self, text=text)
+                    dlg.exec()
                 else:
                     return
-
-        dlg = CustomDialog(parent=self, text=text)
-        dlg.exec()
 
     def update_unreceived_file(self):
         file_name = QFileDialog.getOpenFileName(self)[0]
         if file_name:
             fileupdate.new_packages(file_name)
-            dlg = CustomDialog(self, 'done')
-            dlg.exec()
+            print('Unreceived File Updated')
         else:
             return
 
