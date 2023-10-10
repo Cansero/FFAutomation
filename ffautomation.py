@@ -48,7 +48,7 @@ def receiving(list_from_program, time_to_sleep, run_minimized=False):
         row = 1
         times_appear = 0
         while row <= results:
-            if find_match(driver, row, tracking) is True:
+            if find_match(driver, row, tracking):
                 state = detect_state(driver, row)
                 hold = is_hold(driver, row)
 
@@ -59,9 +59,11 @@ def receiving(list_from_program, time_to_sleep, run_minimized=False):
 
                 if hold:
                     place_as('Hold', driver, row)
+                    write_hold_comment(driver, row, today)
+                    place_as('Problems for Client', driver, row)
                     holds.append(tracking)
 
-                if state in ['Problems for Forwarder', 'Problems for Client']:
+                if state not in ['Received', 'Unreceived']:
                     place_as(state, driver, row)
                     problems.append(tracking)
 
