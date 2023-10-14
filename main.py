@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
                 result = []
                 for x in state:
                     if x[3] != 'Pre-manifested':
-                        result.append(x)
+                        result.append(" ".join(x))
                 if not result:
                     print('All packages pre-manifested')
                 else:
