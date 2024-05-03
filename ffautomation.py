@@ -302,3 +302,49 @@ def problemas(list_from_program, referencias, initials=None, run_minimized=False
 
     driver.quit()
     return messages
+
+
+def returns(list_from_program, time_to_sleep, run_minimized=False):
+
+    driver = webdriver.Chrome(options=options, service=chrome_service)
+    if run_minimized:
+        driver.minimize_window()
+    driver.get(references.url)
+
+    log_in(driver)
+
+    state = []
+    place = 0
+    for inbound in list_from_program:
+        place += 1
+        row = 1
+        search_tracking(driver, inbound)
+
+        results = len(driver.find_elements(by=By.XPATH, value="//tbody/tr"))
+        matches = len(driver.find_elements(by=By.XPATH, value="//tbody/tr/td[3]"
+                                                              "//*[contains(text(),'{}')]".format(inbound)))
+
+        if results == 0:
+            state.append(f'{place}.- {inbound} - Not found')
+
+        elif matches > 1:
+            state.append(f'{place}.- {inbound} - Repeated')
+
+        else:
+            while row <= results:
+                if find_match(driver, row, inbound) is True:
+                    # place_as('Processed', driver, row)
+                    accept_alert(driver)
+                    place_as('Package Returned', driver, row)
+
+                    state.append(f'{place}.- {inbound} - Returned')
+
+                    row += 1
+
+                else:
+                    row += 1
+
+        sleep(time_to_sleep)
+
+    driver.quit()
+    return state

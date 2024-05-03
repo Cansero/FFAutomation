@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
 
         self.text = QLabel('Select an option:')
         self.list = QComboBox()
-        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Problems'])  # Codes option removed
+        self.list.addItems(['Receiving', 'Pre-manifest', 'Print Label', 'Problems', 'Returns'])  # Codes option removed
         self.items = QTextEdit()
         self.items.setAcceptRichText(False)
         self.ok_button = QPushButton('OK')
@@ -136,6 +136,11 @@ class MainWindow(QMainWindow):
                     dlg.exec()
                 else:
                     return
+
+            case 'Returns':
+                returns = info.split()
+
+
 
     def update_unreceived_file(self):
         file_name = QFileDialog.getOpenFileName(self)[0]
