@@ -333,7 +333,7 @@ def returns(list_from_program, time_to_sleep, run_minimized=False):
         else:
             while row <= results:
                 if find_match(driver, row, inbound) is True:
-                    # place_as('Processed', driver, row)
+                    place_as('Processed', driver, row)
                     accept_alert(driver)
                     place_as('Package Returned', driver, row)
 

@@ -139,8 +139,16 @@ class MainWindow(QMainWindow):
 
             case 'Returns':
                 returns = info.split()
-
-
+                state = ffautomation.returns(returns, self.sleep_time, run_minimized=self.minimized)
+                state = [x.split() for x in state]
+                result = []
+                for x in state:
+                    if x[3] != 'Returned':
+                        result.append(" ".join(x))
+                if not result:
+                    print('All packages returned')
+                else:
+                    print("\n".join(result))
 
     def update_unreceived_file(self):
         file_name = QFileDialog.getOpenFileName(self)[0]
